@@ -1,52 +1,57 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { authApi } from '../services/api';
+'use client';
+
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { api, tokenStore } from '@/lib/api';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const username = localStorage.getItem('username');
-    if (token && username) {
-      setUser({ token, username });
-    }
+    setUser(tokenStore.getUser());
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
-    const data = await authApi.login(email, password);
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('username', data.username);
-    setUser({ token: data.token, username: data.username });
-    return data;
-  };
+  const login = useCallback(async (email, password) => {
+    const auth = await api.login({ email, password });
+    tokenStore.set(auth);
+    setUser(auth.user);
+    return auth.user;
+  }, []);
 
-  const register = async (username, email, password) => {
-    const data = await authApi.register(username, email, password);
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('username', data.username);
-    setUser({ token: data.token, username: data.username });
-    return data;
-  };
+  const register = useCallback(async (payload) => {
+    const auth = await api.register(payload);
+    tokenStore.set(auth);
+    setUser(auth.user);
+    return auth.user;
+  }, []);
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
+  const logout = useCallback(async () => {
+    try { await api.logout(); } catch {}
+    tokenStore.clear();
     setUser(null);
-  };
+    router.push('/login');
+  }, [router]);
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = useMemo(() => ({
+    user,
+    loading,
+    login,
+    register,
+    logout,
+    isAdmin: user?.role === 'Admin',
+    isManagerOrAdmin: user?.role === 'Admin' || user?.role === 'Manager'
+  }), [user, loading, login, register, logout]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 }
