@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import 'react-big-calendar/lib/css/react-big-calendar.css';
+
+:root {
+  --bg: #f8fafc;
+}
+
+html, body, #__next {
+  height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  color: #0f172a;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+
+.rbc-calendar {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 0.5rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  font-family: inherit;
+}
+
+.rbc-toolbar button {
+  color: #334155;
+  font-weight: 500;
+}
+
+.rbc-toolbar button.rbc-active {
+  background-color: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.rbc-event {
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 2px 6px !important;
+  font-size: 12px !important;
+}
+
+.rbc-today {
+  background-color: #eef5ff;
+}
+
+.rbc-header {
+  padding: 8px 4px;
+  font-weight: 600;
+  color: #475569;
+}

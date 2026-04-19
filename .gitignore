@@ -1,5 +1,25 @@
+# Frontend
 node_modules/
+.next/
 dist/
+out/
 .env
+.env.local
 *.local
 
+# Backend
+bin/
+obj/
+*.user
+*.suo
+appsettings.Development.json
+*.db
+*.db-shm
+*.db-wal
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vs/
+.vscode/
+.idea/
