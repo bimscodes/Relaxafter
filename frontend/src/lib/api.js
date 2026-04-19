@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5080';
+import { mockApi, resetDemoData } from './mockApi';
 
 const ACCESS_KEY = 'relaxafter_access';
 const REFRESH_KEY = 'relaxafter_refresh';
@@ -24,85 +24,33 @@ export const tokenStore = {
   }
 };
 
-async function refreshAccessToken() {
-  const refreshToken = tokenStore.getRefresh();
-  if (!refreshToken) throw new Error('No refresh token');
-  const res = await fetch(`${API_URL}/api/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken })
-  });
-  if (!res.ok) {
-    tokenStore.clear();
-    throw new Error('Refresh failed');
-  }
-  const data = await res.json();
-  tokenStore.set(data);
-  return data.accessToken;
-}
-
-export async function apiFetch(path, options = {}, retry = true) {
-  const token = tokenStore.getAccess();
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
-  };
-
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
-
-  if (res.status === 401 && retry && tokenStore.getRefresh()) {
-    try {
-      await refreshAccessToken();
-      return apiFetch(path, options, false);
-    } catch {
-      tokenStore.clear();
-      if (typeof window !== 'undefined') window.location.href = '/login';
-      throw new Error('Unauthorized');
-    }
-  }
-
-  if (!res.ok) {
-    let message = `Request failed (${res.status})`;
-    try {
-      const body = await res.json();
-      if (body?.message) message = body.message;
-      else if (body?.errors) message = Object.values(body.errors).flat().join(', ');
-    } catch {}
-    throw new Error(message);
-  }
-
-  if (res.status === 204) return null;
-  return res.json();
-}
+const tok = () => tokenStore.getAccess();
 
 export const api = {
-  login: (body) => apiFetch('/api/auth/login', { method: 'POST', body: JSON.stringify(body) }, false),
-  register: (body) => apiFetch('/api/auth/register', { method: 'POST', body: JSON.stringify(body) }, false),
-  logout: () => apiFetch('/api/auth/logout', { method: 'POST' }),
-  me: () => apiFetch('/api/auth/me'),
+  login: (body) => mockApi.login(body),
+  register: (body) => mockApi.register(body),
+  logout: () => mockApi.logout(tok()),
+  me: () => mockApi.me(tok()),
 
-  dashboard: () => apiFetch('/api/dashboard'),
+  dashboard: () => mockApi.dashboard(tok()),
 
-  listUsers: () => apiFetch('/api/users'),
-  createUser: (body) => apiFetch('/api/users', { method: 'POST', body: JSON.stringify(body) }),
-  updateUser: (id, body) => apiFetch(`/api/users/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
-  deleteUser: (id) => apiFetch(`/api/users/${id}`, { method: 'DELETE' }),
+  listUsers: () => mockApi.listUsers(tok()),
+  createUser: (body) => mockApi.createUser(tok(), body),
+  updateUser: (id, body) => mockApi.updateUser(tok(), id, body),
+  deleteUser: (id) => mockApi.deleteUser(tok(), id),
 
-  listSites: () => apiFetch('/api/sites'),
-  createSite: (body) => apiFetch('/api/sites', { method: 'POST', body: JSON.stringify(body) }),
-  updateSite: (id, body) => apiFetch(`/api/sites/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
-  deleteSite: (id) => apiFetch(`/api/sites/${id}`, { method: 'DELETE' }),
+  listSites: () => mockApi.listSites(tok()),
+  createSite: (body) => mockApi.createSite(tok(), body),
+  updateSite: (id, body) => mockApi.updateSite(tok(), id, body),
+  deleteSite: (id) => mockApi.deleteSite(tok(), id),
 
-  listShifts: (params = {}) => {
-    const qs = new URLSearchParams();
-    Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined && v !== null && v !== '') qs.set(k, v);
-    });
-    const q = qs.toString();
-    return apiFetch(`/api/shifts${q ? `?${q}` : ''}`);
-  },
-  createShift: (body) => apiFetch('/api/shifts', { method: 'POST', body: JSON.stringify(body) }),
-  updateShift: (id, body) => apiFetch(`/api/shifts/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
-  deleteShift: (id) => apiFetch(`/api/shifts/${id}`, { method: 'DELETE' })
+  listShifts: (params = {}) => mockApi.listShifts(tok(), params),
+  createShift: (body) => mockApi.createShift(tok(), body),
+  updateShift: (id, body) => mockApi.updateShift(tok(), id, body),
+  deleteShift: (id) => mockApi.deleteShift(tok(), id),
+
+  resetDemo: () => {
+    resetDemoData();
+    tokenStore.clear();
+  }
 };

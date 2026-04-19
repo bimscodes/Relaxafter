@@ -6,6 +6,34 @@ A multi-tenant SaaS web app for cleaning companies to manage sites, staff, and s
 - **Backend:** ASP.NET Core 8 Web API + Entity Framework Core + SQLite (swap for SQL Server/PostgreSQL in prod)
 - **Auth:** JWT access tokens + refresh tokens, BCrypt password hashing, role-based authorization
 
+> **🧪 Demo mode is currently active.** The frontend ships with an in-browser
+> mock backend (localStorage-backed) so you can deploy and try the entire app
+> with no server. To wire it back to the real .NET API, see
+> [Switching off demo mode](#switching-off-demo-mode).
+
+## 🚀 One-command demo deploy (Vercel)
+
+```bash
+cd frontend
+npx vercel             # follow the prompts to log in / link a project
+npx vercel --prod      # publishes the live URL
+```
+
+Or push this repo to GitHub and import the `frontend/` directory in the
+Vercel dashboard — it auto-detects Next.js. No environment variables needed
+in demo mode.
+
+### Pre-seeded demo accounts
+
+| Role    | Email               | Password   |
+| ------- | ------------------- | ---------- |
+| Admin   | `admin@demo.com`    | `demo1234` |
+| Manager | `manager@demo.com`  | `demo1234` |
+| Staff   | `staff@demo.com`    | `demo1234` |
+
+The login page has one-click buttons for each. Click **Reset demo data** on
+the login page to wipe localStorage back to the seeded state.
+
 ## Folder structure
 
 ```
@@ -118,6 +146,19 @@ Open <http://localhost:3000>. Register a new company → you become the admin.
 3. Go to **Users** → add a Staff member (email + password).
 4. Go to **Calendar** → click a date → assign the staff to a site with start/end times.
 5. Staff logs in with their credentials → sees only their own shifts on the calendar.
+
+## Switching off demo mode
+
+The mock lives in `frontend/src/lib/mockApi.js` and is wired up by
+`frontend/src/lib/api.js`. To hit the real .NET API instead:
+
+1. Restore the network-backed client by replacing `frontend/src/lib/api.js`
+   with a `fetch`-based version that calls `process.env.NEXT_PUBLIC_API_URL`
+   (the original implementation is preserved in git history before the demo
+   commit).
+2. Set `NEXT_PUBLIC_API_URL` to your deployed backend URL.
+3. Run the .NET API (`cd backend/RelaxafterApi && dotnet run`) or deploy it
+   to your host of choice.
 
 ## Production notes
 
